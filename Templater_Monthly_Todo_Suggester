@@ -1,0 +1,73 @@
+// Templater Monthly Todo Templete (with suggester format)
+
+<%*
+const month = await tp.system.suggester(['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'], ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'], true, 'Select month');
+const year = parseInt(await tp.system.prompt("Enter year (e.g., 2025)"));
+
+// Map of month names to numbers
+const monthMap = {
+  january: 1, february: 2, march: 3, april: 4, may: 5, june: 6,
+  july: 7, august: 8, september: 9, october: 10, november: 11, december: 12
+};
+
+const monthCaps = month.toUpperCase();
+const monthLower = month.toLowerCase();
+const monthNumber = monthMap[monthLower];
+
+if (!monthNumber) {
+  throw new Error(`Invalid month: ${month}`);
+}
+
+const daysInMonth = new Date(year, monthNumber, 0).getDate(); // correct number of days
+
+// === RENAME FILE ===
+const filename = `${monthCaps} ${year} TODO`;
+await tp.file.rename(filename); // This will rename the file to "MAY TODO 2025"
+
+// === HEADER SECTION ===
+tR += `___\n\n`;
+
+tR += `>[!abstract]+ **Habits/Records/Monthly Goals:**\n`;
+tR += `> - **Habit 1**\n`;
+tR += `>   - Lorem ipsum dolor sit amet, consectetur adipiscing elit \n`;
+tR += `> - **Habit 2**\n`;
+tR += `>   - Lorem ipsum dolor sit amet, consectetur adipiscing elit  \n`;
+tR += `> - **Goal 1**\n`;
+tR += `>   - Lorem ipsum dolor sit amet, consectetur adipiscing elit \n`;
+tR += `>   - Lorem ipsum dolor sit amet, consectetur adipiscing elit \n`;
+tR += `> - **Goal 2s**\n`;
+tR += `>   - Lorem ipsum dolor sit amet, consectetur adipiscing eli  \n\n`;
+
+tR += `>[!tip]+ **Monthly TODO:**\n`;
+tR += `> - [ ] Duis aute irure dolor in reprehenderit in voluptate \n`
+tR += `> 	 - Duis aute irure dolor \n`
+tR += `> - [ ] Example 1 \n`
+tR += `> - [ ] Example 2 \n`
+tR += `> - [ ] Example 3 \n`
+
+tR += `___\n\n`;
+
+// === DATE BLOCK GENERATION ===
+function getSuffix(day) {
+  if (day > 3 && day < 21) return "th";
+  switch (day % 10) {
+    case 1: return "st";
+    case 2: return "nd";
+    case 3: return "rd";
+    default: return "th";
+  }
+}
+
+for (let day = 1; day <= daysInMonth; day++) {
+  const date = new Date(year, monthNumber - 1, day);
+  const weekday = date.toLocaleDateString("en-US", { weekday: "short" });
+  const suffix = getSuffix(day);
+  const dayStr = String(day).padStart(2, "0");
+  const linkDate = `${year}-${String(monthNumber).padStart(2, "0")}-${dayStr}`;
+
+  tR += `**${monthCaps} ${day}${suffix} - ${weekday} --------**\n`;
+  tR += `##### Tasks:\n - [ ] \n - [ ] \n - [ ] \n\n`;
+  tR += `###### Events:\n- \n- \n- \n`;
+  tR += `###### Daily log:\n[[${linkDate}]]\n\n\n`;
+}
+%>
