@@ -1,0 +1,79 @@
+
+
+```dataviewjs
+
+// Create a Folder called "People" in vaults root folder (if this changes, you must change dv.pages('"People"') to match folder structure) -
+//and have an indidual note for each person with date property for a birthday. 
+//Then use this dataviewjs (with dataview plugin) to source from those files. 
+//It will display Name, Birthday, Days until Birthday, and Age
+// Example People note:  "Dad.md"
+//
+//---
+//type: people
+//dates:
+// - 1951-02-20 | Birthday
+//---
+//# Dad
+//Some notes about Dad.
+//He's my dad!
+
+const pages = dv.pages('"People"')
+  .where(p => p.type === "people" && Array.isArray(p.dates) && p.dates.length > 0);
+
+const today = new Date();
+
+function daysUntilNextBirthday(birthday) {
+  let next = new Date(today.getFullYear(), birthday.getMonth(), birthday.getDate());
+  if (next < today) next.setFullYear(next.getFullYear() + 1);
+  return Math.ceil((next - today) / (1000 * 60 * 60 * 24));
+}
+
+function parseDateNoTZ(dateStr) {
+  const parts = dateStr.split("-");
+  if(parts.length !== 3) return null; // Invalid format
+  const [year, month, day] = parts.map(Number);
+  if (isNaN(year) || isNaN(month) || isNaN(day)) return null; // Invalid numbers
+  return new Date(year, month - 1, day);
+}
+
+const allBirthdays = [];
+
+for (const p of pages) {
+  // Filter only strings containing "Birthday" safely
+  const birthdayStrings = p.dates.filter(d => typeof d === "string" && d.includes("Birthday"));
+  
+  const bdays = birthdayStrings
+    .map(d => {
+      const datePart = d.split("|")[0].trim();
+      return parseDateNoTZ(datePart);
+    })
+    .filter(d => d !== null); // Remove invalid dates
+
+  if (bdays.length === 0) continue; // No valid birthdays for this person
+
+  let soonestDays = Math.min(...bdays.map(daysUntilNextBirthday));
+  let nextBday = bdays.find(d => daysUntilNextBirthday(d) === soonestDays);
+
+  // Safety check in case nextBday is undefined
+  if (!nextBday) continue;
+
+  let ageTurning = today.getFullYear() - nextBday.getFullYear();
+  if (today > new Date(today.getFullYear(), nextBday.getMonth(), nextBday.getDate())) ageTurning++;
+
+  allBirthdays.push({
+    name: `[[${p.file.name}]]`,
+    birthday: nextBday.toLocaleDateString(undefined, { month: 'long', day: 'numeric' }),
+    daysUntil: soonestDays,
+    ageTurning,
+  });
+}
+
+// Sort by days until next birthday ascending
+allBirthdays.sort((a, b) => a.daysUntil - b.daysUntil);
+
+dv.table(
+  ["Name", "Birthday", "Days Until", "Turns"],
+  allBirthdays.map(p => [p.name, p.birthday, p.daysUntil, p.ageTurning])
+);
+
+```
