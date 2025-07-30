@@ -1,0 +1,42 @@
+```dataviewjs
+
+const pages = dv.pages('"People"')
+  .where(p => p.type === "people" && p.birthday);
+
+function daysUntilNextBirthday(date) {
+  const today = new Date();
+  const thisYear = new Date(today.getFullYear(), date.getMonth(), date.getDate());
+  const nextBirthday = thisYear < today
+    ? new Date(today.getFullYear() + 1, date.getMonth(), date.getDate())
+    : thisYear;
+  return Math.ceil((nextBirthday - today) / (1000 * 60 * 60 * 24));
+}
+
+const rows = [];
+
+for (const p of pages) {
+  const bdayRaw = p.birthday;
+  const bday = new Date(bdayRaw); // works for ISO strings like '1982-06-04'
+
+  if (isNaN(bday)) continue;
+
+  const daysLeft = daysUntilNextBirthday(bday);
+  const today = new Date();
+  const age = today.getFullYear() - bday.getFullYear()
+    + (daysLeft === 0 ? 1 : 0);
+
+  rows.push([
+    `[[${p.file.name}]]`,
+    bday.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }),
+    daysLeft === 0 ? "**Today!**" : daysLeft,
+    age
+  ]);
+}
+
+if (rows.length === 0) {
+  dv.paragraph("No birthdays found.");
+} else {
+  rows.sort((a, b) => a[2] === "**Today!**" ? -1 : a[2] - b[2]);
+  dv.table(["Name", "Birthday", "Days Until", "Turning"], rows);
+}
+```
