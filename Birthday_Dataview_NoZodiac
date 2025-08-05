@@ -1,0 +1,47 @@
+const pages = dv.pages('"People"')
+  .where(p => p.type === "people" && p.birthday);
+
+function daysUntilNextBirthday(date) {
+  const today = new Date();
+  const thisYear = new Date(today.getFullYear(), date.getMonth(), date.getDate());
+  const nextBirthday = thisYear < today
+    ? new Date(today.getFullYear() + 1, date.getMonth(), date.getDate())
+    : thisYear;
+  return Math.ceil((nextBirthday - today) / (1000 * 60 * 60 * 24));
+}
+
+const rows = [];
+const today = new Date();
+
+for (const p of pages) {
+  const bdayRaw = p.birthday;
+  const bday = new Date(bdayRaw); // expects ISO format like '1989-07-01'
+
+  if (isNaN(bday)) continue;
+
+  const daysLeft = daysUntilNextBirthday(bday);
+
+  const hasBirthdayPassedThisYear =
+    today.getMonth() > bday.getMonth() ||
+    (today.getMonth() === bday.getMonth() && today.getDate() >= bday.getDate());
+
+  const currentAge = today.getFullYear() - bday.getFullYear()
+    - (hasBirthdayPassedThisYear ? 0 : 1);
+
+  const turning = currentAge + 1;
+
+  rows.push([
+    `[[${p.file.name}]]`,
+    bday.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }),
+    daysLeft === 0 ? "**Today!**" : daysLeft,
+    currentAge,
+    turning
+  ]);
+}
+
+if (rows.length === 0) {
+  dv.paragraph("No birthdays found.");
+} else {
+  rows.sort((a, b) => a[2] === "**Today!**" ? -1 : b[2] === "**Today!**" ? 1 : a[2] - b[2]);
+  dv.table(["Name", "Birthday", "Days Until", "Age Now", "Turning Next"], rows);
+}
