@@ -3,11 +3,17 @@ const pages = dv.pages('"People"')
 
 function daysUntilNextBirthday(date) {
   const today = new Date();
-  const thisYear = new Date(today.getFullYear(), date.getMonth(), date.getDate());
-  const nextBirthday = thisYear < today
-    ? new Date(today.getFullYear() + 1, date.getMonth(), date.getDate())
-    : thisYear;
-  return Math.ceil((nextBirthday - today) / (1000 * 60 * 60 * 24));
+  const todayMidnight = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+
+  const birthdayThisYear = new Date(today.getFullYear(), date.getMonth(), date.getDate());
+
+  const nextBirthday =
+    birthdayThisYear < todayMidnight
+      ? new Date(today.getFullYear() + 1, date.getMonth(), date.getDate())
+      : birthdayThisYear;
+
+  const msPerDay = 1000 * 60 * 60 * 24;
+  return Math.floor((nextBirthday - todayMidnight) / msPerDay);
 }
 
 function getZodiacSign(date) {
@@ -27,7 +33,7 @@ function getZodiacSign(date) {
   if ((month == 11 && day >= 22) || (month == 12 && day <= 21)) return "Sagittarius";
   if ((month == 12 && day >= 22) || (month == 1 && day <= 19)) return "Capricorn";
 
-  return "Syntax Error";  // Safety check (In case of invalid date input)
+  return "Syntax Error"; // Safety check (In case of invalid date input)
 }
 
 const rows = [];
@@ -40,13 +46,8 @@ for (const p of pages) {
 
   const daysLeft = daysUntilNextBirthday(bday);
 
-  const hasBirthdayPassedThisYear =
-    today.getMonth() > bday.getMonth() ||
-    (today.getMonth() === bday.getMonth() && today.getDate() >= bday.getDate());
-
   const currentAge = today.getFullYear() - bday.getFullYear()
-    - (hasBirthdayPassedThisYear ? 0 : 1);
-
+    - (daysLeft > 0 ? 1 : 0);
   const turning = currentAge + 1;
   const zodiac = getZodiacSign(bday);
 
