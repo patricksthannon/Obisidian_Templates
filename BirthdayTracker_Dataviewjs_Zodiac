@@ -1,69 +1,74 @@
 const pages = dv.pages('"People"')
   .where(p => p.type === "people" && p.birthday);
 
+// Define today once at the top
+const today = new Date();
+
 function daysUntilNextBirthday(date) {
-  const today = new Date();
-  const todayMidnight = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+    const todayMidnight = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+    const thisYear = new Date(today.getFullYear(), date.getMonth(), date.getDate());
 
-  const birthdayThisYear = new Date(today.getFullYear(), date.getMonth(), date.getDate());
+    const nextBirthday = thisYear < todayMidnight
+        ? new Date(today.getFullYear() + 1, date.getMonth(), date.getDate())
+        : thisYear;
 
-  const nextBirthday =
-    birthdayThisYear < todayMidnight
-      ? new Date(today.getFullYear() + 1, date.getMonth(), date.getDate())
-      : birthdayThisYear;
-
-  const msPerDay = 1000 * 60 * 60 * 24;
-  return Math.floor((nextBirthday - todayMidnight) / msPerDay);
+    return Math.ceil((nextBirthday - todayMidnight) / (1000 * 60 * 60 * 24));
 }
 
 function getZodiacSign(date) {
-  const day = date.getDate();
-  const month = date.getMonth() + 1;
+    const day = date.getDate();
+    const month = date.getMonth() + 1;
 
-  if ((month == 1 && day >= 20) || (month == 2 && day <= 18)) return "Aquarius";
-  if ((month == 2 && day >= 19) || (month == 3 && day <= 20)) return "Pisces";
-  if ((month == 3 && day >= 21) || (month == 4 && day <= 19)) return "Aries";
-  if ((month == 4 && day >= 20) || (month == 5 && day <= 20)) return "Taurus";
-  if ((month == 5 && day >= 21) || (month == 6 && day <= 20)) return "Gemini";
-  if ((month == 6 && day >= 21) || (month == 7 && day <= 22)) return "Cancer";
-  if ((month == 7 && day >= 23) || (month == 8 && day <= 22)) return "Leo";
-  if ((month == 8 && day >= 23) || (month == 9 && day <= 22)) return "Virgo";
-  if ((month == 9 && day >= 23) || (month == 10 && day <= 22)) return "Libra";
-  if ((month == 10 && day >= 23) || (month == 11 && day <= 21)) return "Scorpio";
-  if ((month == 11 && day >= 22) || (month == 12 && day <= 21)) return "Sagittarius";
-  if ((month == 12 && day >= 22) || (month == 1 && day <= 19)) return "Capricorn";
+    if ((month == 1 && day >= 20) || (month == 2 && day <= 18)) return "Aquarius";
+    if ((month == 2 && day >= 19) || (month == 3 && day <= 20)) return "Pisces";
+    if ((month == 3 && day >= 21) || (month == 4 && day <= 19)) return "Aries";
+    if ((month == 4 && day >= 20) || (month == 5 && day <= 20)) return "Taurus";
+    if ((month == 5 && day >= 21) || (month == 6 && day <= 20)) return "Gemini";
+    if ((month == 6 && day >= 21) || (month == 7 && day <= 22)) return "Cancer";
+    if ((month == 7 && day >= 23) || (month == 8 && day <= 22)) return "Leo";
+    if ((month == 8 && day >= 23) || (month == 9 && day <= 22)) return "Virgo";
+    if ((month == 9 && day >= 23) || (month == 10 && day <= 22)) return "Libra";
+    if ((month == 10 && day >= 23) || (month == 11 && day <= 21)) return "Scorpio";
+    if ((month == 11 && day >= 22) || (month == 12 && day <= 21)) return "Sagittarius";
+    if ((month == 12 && day >= 22) || (month == 1 && day <= 19)) return "Capricorn";
 
-  return "Syntax Error"; // Safety check (In case of invalid date input)
+    return "Unknown";
 }
 
 const rows = [];
-const today = new Date();
 
 for (const p of pages) {
-  const bdayRaw = p.birthday;
-  const bday = new Date(bdayRaw);
-  if (isNaN(bday)) continue;
+    const bdayRaw = p.birthday;
+    const bday = new Date(bdayRaw);
+    if (isNaN(bday)) continue;
 
-  const daysLeft = daysUntilNextBirthday(bday);
+    const daysLeft = daysUntilNextBirthday(bday);
 
-  const currentAge = today.getFullYear() - bday.getFullYear()
-    - (daysLeft > 0 ? 1 : 0);
-  const turning = currentAge + 1;
-  const zodiac = getZodiacSign(bday);
+    const hasBirthdayPassedThisYear =
+        today.getMonth() > bday.getMonth() ||
+        (today.getMonth() === bday.getMonth() && today.getDate() >= bday.getDate());
 
-  rows.push([
-    `[[${p.file.name}]]`,
-    bday.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }),
-    daysLeft === 0 ? "**Today!**" : daysLeft,
-    currentAge,
-    turning,
-    zodiac
-  ]);
+    const currentAge = today.getFullYear() - bday.getFullYear()
+        - (hasBirthdayPassedThisYear ? 0 : 1);
+
+    const turning = currentAge + 1;
+    const zodiac = getZodiacSign(bday);
+
+    rows.push([
+        `[[${p.file.name}]]`,
+        bday.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }),
+        daysLeft === 0 ? "**Today!**" : daysLeft,
+        currentAge,
+        turning,
+        zodiac
+    ]);
 }
 
 if (rows.length === 0) {
-  dv.paragraph("No birthdays found.");
+    dv.paragraph("No birthdays found.");
 } else {
-  rows.sort((a, b) => a[2] === "**Today!**" ? -1 : b[2] === "**Today!**" ? 1 : a[2] - b[2]);
-  dv.table(["Name", "Birthday", "Days Until", "Age Now", "Turning", "Zodiac"], rows);
+    rows.sort((a, b) => 
+        a[2] === "**Today!**" ? -1 : b[2] === "**Today!**" ? 1 : a[2] - b[2]
+    );
+    dv.table(["Name", "Birthday", "Days Until", "Age Now", "Turning", "Zodiac"], rows);
 }
