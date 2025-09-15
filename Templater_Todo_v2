@@ -1,0 +1,121 @@
+<%*
+const month = await tp.system.suggester(
+  ['January','February','March','April','May','June','July','August','September','October','November','December'],
+  ['January','February','March','April','May','June','July','August','September','October','November','December'],
+  true,
+  'Select month'
+);
+
+const currentYear = new Date().getFullYear();
+let years = [];
+for (let y = currentYear; y <= currentYear + 5; y++) years.push(y);
+
+let year = await tp.system.suggester(years, years, true, "Select year (or cancel for custom)");
+if (!year) year = parseInt(await tp.system.prompt("Enter a custom year (e.g., 2025)"));
+if (isNaN(year) || year < 1) throw new Error("Invalid year entered");
+
+const monthMap = {
+  january: 1, february: 2, march: 3, april: 4, may: 5, june: 6,
+  july: 7, august: 8, september: 9, october: 10, november: 11, december: 12
+};
+const monthLower = month.toLowerCase();
+const monthCaps = month.toUpperCase();
+const monthNumber = monthMap[monthLower];
+if (!monthNumber) throw new Error(`Invalid month: ${month}`);
+
+const daysInMonth = new Date(year, monthNumber, 0).getDate();
+
+// rename file
+const filename = `${monthCaps} ${year} TODO`;
+await tp.file.rename(filename);
+
+// === HEADER / DASHBOARD ===
+tR = `---
+type: monthly-todo
+month: ${monthCaps}
+year: ${year}
+tags: [todo, monthly, tracker]
+---
+___
+#### DashBoard 
+
+>[!goal]- Monthly Goals
+> - **Habit 1**
+> - **Habit 2**
+> - **Goal 1**
+> - **Goal 2**
+
+>[!monthlytasks]- Monthly Tasks
+> - [ ] Example 1
+> - [ ] Example 2
+
+>[!habits]- Habits / Learning
+> -  
+
+>[!financial]- Financial
+>>>[!done]- Bills Paid
+>![[Bills Paid ${month} ${year}]]
+
+>[!projects]- Projects
+> -  
+
+>[!idea]- Ideas
+> -  
+
+>[!info]- Misc Important Info
+> -  
+
+___
+
+`;
+
+// === HELPERS ===
+function getSuffix(day) {
+  if (day > 3 && day < 21) return "th";
+  switch (day % 10) {
+    case 1: return "st";
+    case 2: return "nd";
+    case 3: return "rd";
+    default: return "th";
+  }
+}
+function getWeekNumber(date) {
+  const temp = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+  const dayNum = temp.getUTCDay() || 7;
+  temp.setUTCDate(temp.getUTCDate() + 4 - dayNum);
+  const yearStart = new Date(Date.UTC(temp.getUTCFullYear(),0,1));
+  return Math.ceil((((temp - yearStart) / 86400000) + 1)/7);
+}
+
+// === DAILY ENTRIES + WEEKLY LOGS ===
+let currentWeek = null;
+
+for (let day = 1; day <= daysInMonth; day++) {
+  const date = new Date(year, monthNumber - 1, day);
+  const weekday = date.toLocaleDateString("en-US", { weekday: "short" });
+  const suffix = getSuffix(day);
+  const dayStr = String(day).padStart(2, "0");
+  const linkDate = `${year}-${String(monthNumber).padStart(2, "0")}-${dayStr}`;
+  const weekNumber = getWeekNumber(date);
+
+  // Insert weekly log divider on Sundays
+  if (date.getDay() === 0) {
+    if (currentWeek !== weekNumber) {
+      currentWeek = weekNumber;
+      tR += `---\n#### --- Weekly Log - W${weekNumber} ---\n\n`;
+      tR += `>[!weekly]- ${year} - W${weekNumber}\n`;
+      tR += `> ![[${year} - W${weekNumber}]]\n\n---\n\n`;
+    }
+  }
+
+  // Daily entry
+  tR += `#### ${monthCaps} ${day}${suffix} | ${weekday} -----\n\n`;
+  tR += `##### Tasks:\n`;
+  tR += `<span style="background:#FF6B6B; color:#fff; padding:2px 6px; border-radius:4px;">=== Important! ===</span>\n- [ ] \n- [ ] \n\n`;
+  tR += `<span style="background:#FFD93D; color:#000; padding:2px 6px; border-radius:4px;">=== Secondary ===</span>\n- [ ] \n- [ ] \n\n`;
+  tR += `<span style="background:#E0E0E0; color:#000; padding:2px 6px; border-radius:4px;">=== Later ===</span>\n- [ ] \n- [ ] \n\n`;
+
+  tR += `##### Happenings:\n- \n- \n- \n\n`;
+  tR += `##### Daily log:\n>[!abstract]- ${linkDate}\n![[${linkDate}]]\n\n\n`;
+}
+%>
