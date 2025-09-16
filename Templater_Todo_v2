@@ -40,8 +40,6 @@ ___
 #### DashBoard 
 
 >[!goal]- Monthly Goals
-> - **Habit 1**
-> - **Habit 2**
 > - **Goal 1**
 > - **Goal 2**
 
@@ -50,20 +48,21 @@ ___
 > - [ ] Example 2
 
 >[!habits]- Habits / Learning
-> -  
+> - **Habit 1**
+> - **Habit 2**
 
 >[!financial]- Financial
 >>>[!done]- Bills Paid
 >![[Bills Paid ${month} ${year}]]
 
 >[!projects]- Projects
-> -  
+> - Project 1 
 
 >[!idea]- Ideas
-> -  
+> - Idea 1
 
 >[!info]- Misc Important Info
-> -  
+> -  Door Code:
 
 ___
 
